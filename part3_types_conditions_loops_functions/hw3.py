@@ -86,6 +86,7 @@ def extract_date(maybe_dt: str) -> DateTuple | None:
         return None
     return day, month, year
 
+
 def extract_valid_date(maybe_dt: str) -> DateTuple:
     parts = maybe_dt.split(DATE_SEPARATOR)
 
@@ -94,6 +95,7 @@ def extract_valid_date(maybe_dt: str) -> DateTuple:
     year = int(parts[2])
 
     return day, month, year
+
 
 def extract_amount(maybe_amount: str) -> float | None:
     sign = 1
