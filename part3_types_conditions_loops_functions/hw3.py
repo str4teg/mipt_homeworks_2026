@@ -81,7 +81,7 @@ def extract_amount(maybe_amount: str) -> float | None:
         maybe_amount = maybe_amount[1:]
 
     maybe_amount = maybe_amount.replace(",", ".").split(".")
-    if len(maybe_amount) > 2 or len(maybe_amount) == 0:
+    if len(maybe_amount) > FLOAT_FRAGMENTS or len(maybe_amount) == 0:
         return None
     for i in maybe_amount:
         if not i.isdigit():
@@ -168,6 +168,7 @@ def is_before(processing_date: tuple[int, int, int], date: tuple[int, int, int])
 
 def is_within_month(processing_date, date):
     return (processing_date[1], processing_date[2]) == (date[1], date[2])
+
 
 def calculate_stats(date: tuple[int, int, int]) -> tuple[float, float, float, dict[str, float]]:
     total_amount = 0
