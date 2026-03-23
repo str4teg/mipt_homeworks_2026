@@ -67,10 +67,10 @@ def _validate_day_month(day: int, month: int, year: int) -> bool:
     return day != 0 and day <= days_in_months[month]
 
 
-def extract_date(raw: str) -> DateTuple | None:
-    if not _has_valid_date_format(raw):
+def extract_date(maybe_dt: str) -> DateTuple | None:
+    if not _has_valid_date_format(maybe_dt):
         return None
-    parts = raw.split(DATE_SEPARATOR)
+    parts = maybe_dt.split(DATE_SEPARATOR)
     if len(parts) != DATE_FRAGMENTS_AMOUNT:
         return None
 
@@ -86,6 +86,14 @@ def extract_date(raw: str) -> DateTuple | None:
         return None
     return day, month, year
 
+def extract_valid_date(maybe_dt: str) -> DateTuple:
+    parts = maybe_dt.split(DATE_SEPARATOR)
+
+    day = int(parts[0])
+    month = int(parts[1])
+    year = int(parts[2])
+
+    return day, month, year
 
 def extract_amount(maybe_amount: str) -> float | None:
     sign = 1
@@ -116,14 +124,14 @@ def extract_category(raw: str) -> str | None:
     return child
 
 
-def process_income(command: list) -> None:
+def process_income(command: list[str]) -> None:
     if len(command) == INCOME_QUERY_LENGTH:
         _execute_income(command)
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_income(command: list) -> None:
+def _execute_income(command: list[str]) -> None:
     amount = extract_amount(command[1])
     date = extract_date(command[2])
     if amount is None or amount <= 0:
@@ -135,13 +143,13 @@ def _execute_income(command: list) -> None:
 
 
 def income_handler(amount: float, income_date: str) -> str:
-    income_date = extract_date(income_date)
-    income_storage.setdefault(income_date, 0)
-    income_storage[income_date] += amount
+    date = extract_valid_date(income_date)
+    income_storage.setdefault(date, 0)
+    income_storage[date] += amount
     return OP_SUCCESS_MSG
 
 
-def process_cost(command: list) -> None:
+def process_cost(command: list[str]) -> None:
     cmd_len = len(command)
     is_categories_query = (
             cmd_len == COST_CATEGORY_QUERY_LENGTH
@@ -155,7 +163,7 @@ def process_cost(command: list) -> None:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_cost(command: list) -> None:
+def _execute_cost(command: list[str]) -> None:
     category_name = extract_category(command[1])
     amount = extract_amount(command[2])
     date = extract_date(command[3])
@@ -170,19 +178,19 @@ def _execute_cost(command: list) -> None:
 
 
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
-    income_date = extract_date(income_date)
-    cost_storage.setdefault(income_date, 0)
-    cost_storage[income_date] += amount
+    date = extract_valid_date(income_date)
+    cost_storage.setdefault(date, 0)
+    cost_storage[date] += amount
 
-    category_storage.setdefault(income_date, {})
-    date_cats = category_storage[income_date]
+    category_storage.setdefault(date, {})
+    date_cats = category_storage[date]
     date_cats.setdefault(category_name, 0)
     date_cats[category_name] += amount
     return OP_SUCCESS_MSG
 
 
 def cost_categories_handler() -> str:
-    return EXPENSE_CATEGORIES
+    return str(EXPENSE_CATEGORIES)
 
 
 def is_before(processing_date: DateTuple, date: DateTuple) -> bool:
@@ -211,9 +219,9 @@ def _aggregate_categories(processing_date: DateTuple, category_costs: CategoryCo
 
 
 def calculate_stats(date: DateTuple) -> StatsResult:
-    total_amount = 0
-    month_income = 0
-    month_cost = 0
+    total_amount = float()
+    month_income = float()
+    month_cost = float()
     category_costs: CategoryCosts = {}
 
     for proc_date, inc in income_storage.items():
@@ -256,26 +264,26 @@ def build_stats(stats: StatsResult, date: DateTuple) -> str:
     return "\n".join(lines)
 
 
-def process_stats(command: list) -> None:
+def process_stats(command: list[str]) -> None:
     if len(command) == STATS_QUERY_LENGTH:
         _execute_stats(command)
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_stats(command: list) -> None:
+def _execute_stats(command: list[str]) -> None:
     date = extract_date(command[1])
     if date is None:
         print(INCORRECT_DATE_MSG)
     else:
-        print(process_stats(command[1]))
+        print(stats_handler(command[1]))
 
 
 def stats_handler(report_date: str) -> str:
-    date = extract_date(report_date)
-    total_amount = 0
-    month_income = 0
-    month_cost = 0
+    date = extract_valid_date(report_date)
+    total_amount = float()
+    month_income = float()
+    month_cost = float()
     category_costs: CategoryCosts = {}
 
     for proc_date, inc in income_storage.items():
