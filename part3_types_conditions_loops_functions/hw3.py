@@ -10,6 +10,10 @@ INCOME_QUERY_LENGTH = 3
 COST_QUERY_LENGTH = 4
 COST_CATEGORY_QUERY_LENGTH = 2
 STATS_QUERY_LENGTH = 2
+DATE_LENGTH = 10
+DATE_FRAGMENTS_AMOUNT = 3
+AMOUNT_OF_MONTHS = 12
+FLOAT_FRAGMENTS = 2
 
 EXPENSE_CATEGORIES = {
     "Food": ("Supermarket", "Restaurants", "FastFood", "Coffee", "Delivery"),
@@ -29,16 +33,14 @@ category_storage: dict[tuple[int, int, int], dict[str, float]] = {}
 
 
 def is_leap_year(year: int) -> bool:
-    if (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:
-        return True
-    return False
+    return (year % 4 == 0 and year % 100 != 0) or year % 400 == 0
 
 
 def extract_date(maybe_dt: str) -> tuple[int, int, int] | None:
-    if len(maybe_dt) != 10 or maybe_dt[2] != "-" or maybe_dt[5] != "-":
+    if len(maybe_dt) != DATE_LENGTH or maybe_dt[2] != "-" or maybe_dt[5] != "-":
         return None
     maybe_dt = maybe_dt.split("-")
-    if len(maybe_dt) != 3:
+    if len(maybe_dt) != DATE_FRAGMENTS_AMOUNT:
         return None
 
     day, month, year = maybe_dt[0], maybe_dt[1], maybe_dt[2]
@@ -66,7 +68,7 @@ def extract_date(maybe_dt: str) -> tuple[int, int, int] | None:
     if is_leap_year(year):
         days_in_months[2] = 29
 
-    if month > 12 or day > days_in_months[month] or day == 0:
+    if month > AMOUNT_OF_MONTHS or day > days_in_months[month] or day == 0:
         return None
 
     return day, month, year
@@ -92,8 +94,7 @@ def extract_category(maybe_category: str) -> str | None:
     maybe_category = maybe_category.split("::")
     if maybe_category[0] in EXPENSE_CATEGORIES and maybe_category[1] in EXPENSE_CATEGORIES[maybe_category[0]]:
         return maybe_category[1]
-    else:
-        return None
+    return None
 
 
 def process_income(command: list) -> None:
@@ -119,24 +120,23 @@ def income_handler(amount: float, income_date: tuple[int, int, int]) -> str:
 def process_cost(command: list) -> None:
     if len(command) != COST_QUERY_LENGTH and len(command) != COST_CATEGORY_QUERY_LENGTH:
         print(UNKNOWN_COMMAND_MSG)
-    else:
-        if len(command) == 2:
-            if command[1] == "categories":
-                cost_categories_handler()
-            else:
-                print(UNKNOWN_COMMAND_MSG)
+    elif len(command) == COST_CATEGORY_QUERY_LENGTH:
+        if command[1] == "categories":
+            cost_categories_handler()
         else:
-            category_name = extract_category(command[1])
-            amount = extract_amount(command[2])
-            date = extract_date(command[3])
-            if category_name is None:
-                print(NOT_EXISTS_CATEGORY)
-            elif amount <= 0:
-                print(NONPOSITIVE_VALUE_MSG)
-            elif date is None:
-                print(INCORRECT_DATE_MSG)
-            else:
-                print(cost_handler(category_name, amount, date))
+            print(UNKNOWN_COMMAND_MSG)
+    else:
+        category_name = extract_category(command[1])
+        amount = extract_amount(command[2])
+        date = extract_date(command[3])
+        if category_name is None:
+            print(NOT_EXISTS_CATEGORY)
+        elif amount <= 0:
+            print(NONPOSITIVE_VALUE_MSG)
+        elif date is None:
+            print(INCORRECT_DATE_MSG)
+        else:
+            print(cost_handler(category_name, amount, date))
 
 
 def cost_handler(category_name: str, amount: float, income_date: tuple[int, int, int]) -> str:
@@ -158,35 +158,31 @@ def is_before(processing_date: tuple[int, int, int], date: tuple[int, int, int])
     processing_day, processing_month, processing_year = processing_date
     if processing_year < processing_day:
         return True
-    elif processing_year == year:
+    if processing_year == year:
         if processing_month < month:
             return True
-        elif month == processing_month:
-            if processing_day <= day:
-                return True
+        if month == processing_month and processing_day <= day:
+            return True
     return False
 
 
 def is_within_month(processing_date, date):
-    if (processing_date[1], processing_date[2]) == (date[1], date[2]):
-        return True
-    return False
-
+    return (processing_date[1], processing_date[2]) == (date[1], date[2])
 
 def calculate_stats(date: tuple[int, int, int]) -> tuple[float, float, float, dict[str, float]]:
     total_amount = 0
     month_income = 0
     month_cost = 0
     category_costs = {}
-    for processing_date in income_storage:
+    for processing_date, value in income_storage.items():
         if is_before(processing_date, date):
-            total_amount += income_storage[processing_date]
+            total_amount += value
             if is_within_month(processing_date, date):
-                month_income += income_storage[processing_date]
+                month_income += value
 
-    for processing_date in cost_storage:
+    for processing_date, value in cost_storage.items():
         if is_within_month(processing_date, date):
-            month_cost += cost_storage[processing_date]
+            month_cost += value
             for category_name in category_storage[processing_date]:
                 category_costs.setdefault(category_name, 0)
                 category_costs[category_name] += category_storage[processing_date][category_name]
@@ -204,8 +200,8 @@ def build_stats(stats: tuple[float, float, float, dict[str, float]], date: tuple
     result += f"This month, the {status} amounted to {month_income - month_cost:.2f} rubles.\n"
     result += f"Income: {month_income:.2f} rubles\n"
     result += f"Expenses: {month_cost:.2f} rubles\n"
-    result += f"\n"
-    result += f"Details (category: amount):\n"
+    result += "\n"
+    result += "Details (category: amount):\n"
     index = 1
     for category_name, amount in category_costs.items():
         result += f"{index}. {category_name}: {amount:.2f} rubles\n"
