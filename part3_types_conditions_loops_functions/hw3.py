@@ -209,9 +209,9 @@ def _aggregate_categories(processing_date: DateTuple, category_costs: CategoryCo
 
 
 def calculate_stats(date: DateTuple) -> StatsResult:
-    total_amount = 0.0
-    month_income = 0.0
-    month_cost = 0.0
+    total_amount = 0
+    month_income = 0
+    month_cost = 0
     category_costs: CategoryCosts = {}
 
     for proc_date, inc in income_storage.items():
