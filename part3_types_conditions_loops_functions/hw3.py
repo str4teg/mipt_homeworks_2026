@@ -131,10 +131,11 @@ def _execute_income(command: list) -> None:
     elif date is None:
         print(INCORRECT_DATE_MSG)
     else:
-        print(income_handler(amount, date))
+        print(income_handler(amount, command[2]))
 
 
-def income_handler(amount: float, income_date: DateTuple) -> str:
+def income_handler(amount: float, income_date: str) -> str:
+    income_date = extract_date(income_date)
     income_storage.setdefault(income_date, 0)
     income_storage[income_date] += amount
     return OP_SUCCESS_MSG
@@ -147,7 +148,7 @@ def process_cost(command: list) -> None:
             and command[1] == "categories"
     )
     if is_categories_query:
-        cost_categories_handler()
+        print(cost_categories_handler())
     elif cmd_len == COST_QUERY_LENGTH:
         _execute_cost(command)
     else:
@@ -165,10 +166,11 @@ def _execute_cost(command: list) -> None:
     elif date is None:
         print(INCORRECT_DATE_MSG)
     else:
-        print(cost_handler(category_name, amount, date))
+        print(cost_handler(category_name, amount, command[3]))
 
 
-def cost_handler(category_name: str, amount: float, income_date: DateTuple) -> str:
+def cost_handler(category_name: str, amount: float, income_date: str) -> str:
+    income_date = extract_date(income_date)
     cost_storage.setdefault(income_date, 0)
     cost_storage[income_date] += amount
 
@@ -179,8 +181,8 @@ def cost_handler(category_name: str, amount: float, income_date: DateTuple) -> s
     return OP_SUCCESS_MSG
 
 
-def cost_categories_handler() -> None:
-    print(EXPENSE_CATEGORIES)
+def cost_categories_handler() -> str:
+    return EXPENSE_CATEGORIES
 
 
 def is_before(processing_date: DateTuple, date: DateTuple) -> bool:
@@ -266,12 +268,28 @@ def _execute_stats(command: list) -> None:
     if date is None:
         print(INCORRECT_DATE_MSG)
     else:
-        stats = calculate_stats(date)
-        print(build_stats(stats, date))
+        print(process_stats(command[1]))
 
 
 def stats_handler(report_date: str) -> str:
-    return f"Statistic for {report_date}"
+    date = extract_date(report_date)
+    total_amount = 0
+    month_income = 0
+    month_cost = 0
+    category_costs: CategoryCosts = {}
+
+    for proc_date, inc in income_storage.items():
+        if is_before(proc_date, date):
+            total_amount += inc
+            if is_within_month(proc_date, date):
+                month_income += inc
+
+    for proc_date, cost in cost_storage.items():
+        if is_within_month(proc_date, date):
+            month_cost += cost
+            _aggregate_categories(proc_date, category_costs)
+
+    return build_stats((total_amount, month_income, month_cost, category_costs), date)
 
 
 def handle_command(line: str) -> None:
