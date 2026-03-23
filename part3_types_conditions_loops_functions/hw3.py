@@ -219,9 +219,9 @@ def _aggregate_categories(processing_date: DateTuple, category_costs: CategoryCo
 
 
 def calculate_stats(date: DateTuple) -> StatsResult:
-    total_amount = float()
-    month_income = float()
-    month_cost = float()
+    total_amount = float(0)
+    month_income = float(0)
+    month_cost = float(0)
     category_costs: CategoryCosts = {}
 
     for proc_date, inc in income_storage.items():
@@ -281,9 +281,9 @@ def _execute_stats(command: list[str]) -> None:
 
 def stats_handler(report_date: str) -> str:
     date = extract_valid_date(report_date)
-    total_amount = float()
-    month_income = float()
-    month_cost = float()
+    total_amount = float(0)
+    month_income = float(0)
+    month_cost = float(0)
     category_costs: CategoryCosts = {}
 
     for proc_date, inc in income_storage.items():
