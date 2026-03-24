@@ -19,6 +19,10 @@ DATE_SEPARATOR = "-"
 DATE_SEP_FIRST_POS = 2
 DATE_SEP_SECOND_POS = 5
 
+KEY_AMOUNT = "amount"
+KEY_CATEGORY = "category"
+KEY_DATE = "date"
+
 DateTuple = tuple[int, int, int]
 CategoryCosts = dict[str, float]
 StatsResult = tuple[float, float, float, CategoryCosts]
@@ -144,7 +148,9 @@ def _execute_income(command: list[str]) -> None:
 
 
 def income_handler(amount: float, income_date: str) -> str:
-    financial_transactions_storage.append({"amount": amount, "date": income_date})
+    financial_transactions_storage.append(
+        {KEY_AMOUNT: amount, KEY_DATE: income_date},
+    )
     return OP_SUCCESS_MSG
 
 
@@ -177,7 +183,9 @@ def _execute_cost(command: list[str]) -> None:
 
 
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
-    financial_transactions_storage.append({"category": category_name, "amount": amount, "date": income_date})
+    financial_transactions_storage.append(
+        {KEY_CATEGORY: category_name, KEY_AMOUNT: amount, KEY_DATE: income_date},
+    )
     return OP_SUCCESS_MSG
 
 
@@ -186,8 +194,8 @@ def cost_categories_handler() -> str:
 
 
 def is_before(processing_date: str, report_date: str) -> bool:
-    day, month, year = extract_date(report_date)
-    proc_day, proc_month, proc_year = extract_date(processing_date)
+    day, month, year = extract_valid_date(report_date)
+    proc_day, proc_month, proc_year = extract_valid_date(processing_date)
     if proc_year < year:
         return True
     if proc_year != year:
@@ -214,7 +222,7 @@ def build_stats(stats: StatsResult, date: str) -> str:
     total, month_in, month_out, cat_costs = stats
     balance = month_in - month_out
     status = "loss" if balance < 0 else "profit"
-    day, month, year = extract_date(date)
+    day, month, year = extract_valid_date(date)
 
     lines = [
         f"Your statistics as of {day:0>2}-{month:0>2}-{year:0>4}:",
@@ -244,6 +252,17 @@ def _execute_stats(command: list[str]) -> None:
         print(stats_handler(command[1]))
 
 
+def _update_month_stats(transaction: dict[str, Any], proc_date: str, report_date: str, category_costs: CategoryCosts) -> tuple[float, float]:
+    if not is_within_month(proc_date, report_date):
+        return float(0), float(0)
+    amount = transaction.get(KEY_AMOUNT, float(0))
+    if KEY_CATEGORY in transaction:
+        cat_name = transaction.get(KEY_CATEGORY, "")
+        category_costs[cat_name] = category_costs.get(cat_name, float(0)) + amount
+        return float(0), amount
+    return amount, float(0)
+
+
 def stats_handler(report_date: str) -> str:
     total_amount = float(0)
     month_income = float(0)
@@ -251,19 +270,18 @@ def stats_handler(report_date: str) -> str:
     category_costs: CategoryCosts = {}
 
     for transaction in financial_transactions_storage:
-        proc_date = transaction["date"]
-        if is_before(proc_date, report_date):
-            if "category" in transaction:
-                total_amount -= transaction["amount"]
-                if is_within_month(proc_date, report_date):
-                    month_cost += transaction["amount"]
-                    category_costs.setdefault(transaction["category"], 0)
-                    category_costs[transaction["category"]] += transaction["amount"]
-            else:
-                total_amount += transaction["amount"]
-                if is_within_month(proc_date, report_date):
-                    month_income += transaction["amount"]
-
+        proc_date = transaction.get(KEY_DATE, "")
+        if not is_before(proc_date, report_date):
+            continue
+        if KEY_CATEGORY in transaction:
+            total_amount -= transaction.get(KEY_AMOUNT, 0.0)
+        else:
+            total_amount += transaction.get(KEY_AMOUNT, 0.0)
+        inc_delta, cost_delta = _update_month_stats(
+            transaction, proc_date, report_date, category_costs,
+        )
+        month_income += inc_delta
+        month_cost += cost_delta
 
     return build_stats((total_amount, month_income, month_cost, category_costs), report_date)
 
