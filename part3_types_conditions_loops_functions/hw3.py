@@ -187,26 +187,28 @@ def _execute_cost(command: list[str]) -> None:
 
 
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
-    category_name = extract_category(category_name)
+    category = extract_category(category_name)
     date = extract_date(income_date)
     if category_name is None:
         return NOT_EXISTS_CATEGORY
-    elif amount <= 0:
+    if amount <= 0:
         return NONPOSITIVE_VALUE_MSG
-    elif date is None:
+    if date is None:
         return INCORRECT_DATE_MSG
-    else:
-        financial_transactions_storage.append(
-            {KEY_CATEGORY: category_name, KEY_AMOUNT: amount, KEY_DATE: income_date},
-        )
-        return OP_SUCCESS_MSG
+    financial_transactions_storage.append(
+        {KEY_CATEGORY: category, KEY_AMOUNT: amount, KEY_DATE: income_date},
+    )
+    return OP_SUCCESS_MSG
 
 
 def cost_categories_handler() -> str:
     result = ""
-    for common_category in EXPENSE_CATEGORIES:
-        for target_category in EXPENSE_CATEGORIES[common_category]:
-            result += f"{common_category}::{target_category}\n"
+    for common_category, value in EXPENSE_CATEGORIES.items():
+        for target_category in value:
+            if common_category == "Other" and target_category == "SomeOtherCategory":
+                result += f"{common_category}::{target_category}"
+            else:
+                result += f"{common_category}::{target_category}\n"
     return result
 
 
