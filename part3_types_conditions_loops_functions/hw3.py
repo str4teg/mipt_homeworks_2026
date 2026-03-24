@@ -40,7 +40,7 @@ EXPENSE_CATEGORIES = {
     "Other": ("SomeCategory", "SomeOtherCategory"),
 }
 
-financial_transactions_storage: list[dict[str, Any] | None] = []
+financial_transactions_storage: list[dict[str, Any]] = []
 
 
 def is_leap_year(year: int) -> bool:
@@ -153,16 +153,16 @@ def _execute_income(command: list[str]) -> None:
 def income_handler(amount: float, income_date: str) -> str:
     if amount <= 0:
         financial_transactions_storage.append(
-            None
+            {}
         )
         return NONPOSITIVE_VALUE_MSG
     if extract_date(income_date) is None:
         financial_transactions_storage.append(
-            None
+            {}
         )
         return INCORRECT_DATE_MSG
     financial_transactions_storage.append(
-        {KEY_AMOUNT: amount, KEY_DATE: income_date},
+        {KEY_AMOUNT: amount, KEY_DATE: extract_date(income_date)},
     )
     return OP_SUCCESS_MSG
 
@@ -200,21 +200,21 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     date = extract_date(income_date)
     if category is None:
         financial_transactions_storage.append(
-            None
+            {}
         )
         return NOT_EXISTS_CATEGORY
     if amount <= 0:
         financial_transactions_storage.append(
-            None
+            {}
         )
         return NONPOSITIVE_VALUE_MSG
     if date is None:
         financial_transactions_storage.append(
-            None
+            {}
         )
         return INCORRECT_DATE_MSG
     financial_transactions_storage.append(
-        {KEY_CATEGORY: category, KEY_AMOUNT: amount, KEY_DATE: income_date},
+        {KEY_CATEGORY: category, KEY_AMOUNT: amount, KEY_DATE: date},
     )
     return OP_SUCCESS_MSG
 
@@ -228,9 +228,9 @@ def cost_categories_handler() -> str:
     return "\n".join(lines)
 
 
-def is_before(processing_date: str, report_date: str) -> bool:
-    day, month, year = extract_valid_date(report_date)
-    proc_day, proc_month, proc_year = extract_valid_date(processing_date)
+def is_before(processing_date: DateTuple, report_date: DateTuple) -> bool:
+    day, month, year = report_date
+    proc_day, proc_month, proc_year = processing_date
     if proc_year < year:
         return True
     if proc_year != year:
@@ -240,9 +240,9 @@ def is_before(processing_date: str, report_date: str) -> bool:
     return month == proc_month and proc_day <= day
 
 
-def is_within_month(processing_date: str, date: str) -> bool:
-    same_month = extract_valid_date(processing_date)[1] == extract_valid_date(date)[1]
-    same_year = extract_valid_date(processing_date)[2] == extract_valid_date(date)[2]
+def is_within_month(processing_date: DateTuple, date: DateTuple) -> bool:
+    same_month = processing_date[1] == date[1]
+    same_year = processing_date[2] == date[2]
     return same_month and same_year
 
 
@@ -287,7 +287,7 @@ def _execute_stats(command: list[str]) -> None:
         print(stats_handler(command[1]))
 
 
-def _update_month_stats(transaction: dict[str, Any], proc_date: str, report_date: str,
+def _update_month_stats(transaction: dict[str, Any], proc_date: DateTuple, report_date: DateTuple,
                         category_costs: CategoryCosts) -> tuple[float, float]:
     if not is_within_month(proc_date, report_date):
         return float(0), float(0)
@@ -310,14 +310,14 @@ def stats_handler(report_date: str) -> str:
 
     for transaction in financial_transactions_storage:
         proc_date = transaction.get(KEY_DATE, "")
-        if not is_before(proc_date, report_date):
+        if not is_before(proc_date, date):
             continue
         if KEY_CATEGORY in transaction:
             total_amount -= transaction.get(KEY_AMOUNT, float(0))
         else:
             total_amount += transaction.get(KEY_AMOUNT, float(0))
         inc_delta, cost_delta = _update_month_stats(
-            transaction, proc_date, report_date, category_costs,
+            transaction, proc_date, date, category_costs,
         )
         month_income += inc_delta
         month_cost += cost_delta
