@@ -40,7 +40,7 @@ EXPENSE_CATEGORIES = {
     "Other": ("SomeCategory", "SomeOtherCategory"),
 }
 
-financial_transactions_storage: list[dict[str, Any]] = []
+financial_transactions_storage: list[dict[str, Any] | None] = []
 
 
 def is_leap_year(year: int) -> bool:
@@ -152,8 +152,14 @@ def _execute_income(command: list[str]) -> None:
 
 def income_handler(amount: float, income_date: str) -> str:
     if amount <= 0:
+        financial_transactions_storage.append(
+            None
+        )
         return NONPOSITIVE_VALUE_MSG
     if extract_date(income_date) is None:
+        financial_transactions_storage.append(
+            None
+        )
         return INCORRECT_DATE_MSG
     financial_transactions_storage.append(
         {KEY_AMOUNT: amount, KEY_DATE: income_date},
@@ -193,10 +199,19 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     category = extract_category(category_name)
     date = extract_date(income_date)
     if category is None:
+        financial_transactions_storage.append(
+            None
+        )
         return NOT_EXISTS_CATEGORY
     if amount <= 0:
+        financial_transactions_storage.append(
+            None
+        )
         return NONPOSITIVE_VALUE_MSG
     if date is None:
+        financial_transactions_storage.append(
+            None
+        )
         return INCORRECT_DATE_MSG
     financial_transactions_storage.append(
         {KEY_CATEGORY: category, KEY_AMOUNT: amount, KEY_DATE: income_date},
@@ -211,6 +226,7 @@ def cost_categories_handler() -> str:
         for target_category in subcategories
     ]
     return "\n".join(lines)
+
 
 def is_before(processing_date: str, report_date: str) -> bool:
     day, month, year = extract_valid_date(report_date)
