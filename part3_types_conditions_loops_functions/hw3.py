@@ -275,9 +275,9 @@ def stats_handler(report_date: str) -> str:
         if not is_before(proc_date, report_date):
             continue
         if KEY_CATEGORY in transaction:
-            total_amount -= transaction.get(KEY_AMOUNT, 0.0)
+            total_amount -= transaction.get(KEY_AMOUNT, float(0))
         else:
-            total_amount += transaction.get(KEY_AMOUNT, 0.0)
+            total_amount += transaction.get(KEY_AMOUNT, float(0))
         inc_delta, cost_delta = _update_month_stats(
             transaction, proc_date, report_date, category_costs,
         )
