@@ -13,6 +13,7 @@ COST_CATEGORY_QUERY_LENGTH = 2
 STATS_QUERY_LENGTH = 2
 DATE_LENGTH = 10
 DATE_FRAGMENTS_AMOUNT = 3
+CATEGORY_FRAGMENTS_AMOUNT = 2
 AMOUNT_OF_MONTHS = 12
 FLOAT_FRAGMENTS = 2
 DATE_SEPARATOR = "-"
@@ -120,7 +121,7 @@ def extract_amount(maybe_amount: str) -> float | None:
 
 def extract_category(raw: str) -> str | None:
     parts = raw.split("::")
-    if len(parts) != 2:
+    if len(parts) != CATEGORY_FRAGMENTS_AMOUNT:
         return None
     parent = parts[0]
     child = parts[1]
@@ -207,10 +208,8 @@ def cost_categories_handler() -> str:
     result = ""
     for common_category, value in EXPENSE_CATEGORIES.items():
         for target_category in value:
-            result += f"{common_category}::{target_category}"
-            if common_category != "Other" and target_category != "SomeOtherCategory":
-                result += "\n"
-    return result
+            result += f"{common_category}::{target_category}\n"
+    return result[:-1]
 
 
 def is_before(processing_date: str, report_date: str) -> bool:
