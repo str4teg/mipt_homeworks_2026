@@ -50,7 +50,7 @@ def is_leap_year(year: int) -> bool:
     return (by_four and not_by_hundred) or by_four_hundred
 
 
-def _has_valid_date_format(raw: str) -> bool:
+def has_valid_date_format(raw: str) -> bool:
     if len(raw) != DATE_LENGTH:
         return False
     first_ok = raw[DATE_SEP_FIRST_POS] == DATE_SEPARATOR
@@ -58,7 +58,7 @@ def _has_valid_date_format(raw: str) -> bool:
     return first_ok and second_ok
 
 
-def _validate_day_month(day: int, month: int, year: int) -> bool:
+def validate_day_month(day: int, month: int, year: int) -> bool:
     days_in_months = {
         1: 31, 2: 28, 3: 31, 4: 30,
         5: 31, 6: 30, 7: 31, 8: 31,
@@ -72,7 +72,7 @@ def _validate_day_month(day: int, month: int, year: int) -> bool:
 
 
 def extract_date(maybe_dt: str) -> DateTuple | None:
-    if not _has_valid_date_format(maybe_dt):
+    if not has_valid_date_format(maybe_dt):
         return None
     parts = maybe_dt.split(DATE_SEPARATOR)
     if len(parts) != DATE_FRAGMENTS_AMOUNT:
@@ -86,7 +86,7 @@ def extract_date(maybe_dt: str) -> DateTuple | None:
     month = int(parts[1])
     year = int(parts[2])
 
-    if not _validate_day_month(day, month, year):
+    if not validate_day_month(day, month, year):
         return None
     return day, month, year
 
@@ -134,12 +134,12 @@ def extract_category(raw: str) -> str | None:
 
 def process_income(command: list[str]) -> None:
     if len(command) == INCOME_QUERY_LENGTH:
-        _execute_income(command)
+        execute_income(command)
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_income(command: list[str]) -> None:
+def execute_income(command: list[str]) -> None:
     amount = extract_amount(command[1])
     date = extract_date(command[2])
     if amount is None or amount <= 0:
@@ -176,12 +176,12 @@ def process_cost(command: list[str]) -> None:
     if is_categories_query:
         print(cost_categories_handler())
     elif cmd_len == COST_QUERY_LENGTH:
-        _execute_cost(command)
+        execute_cost(command)
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_cost(command: list[str]) -> None:
+def execute_cost(command: list[str]) -> None:
     category_name = extract_category(command[1])
     amount = extract_amount(command[2])
     date = extract_date(command[3])
@@ -246,7 +246,7 @@ def is_within_month(processing_date: DateTuple, date: DateTuple) -> bool:
     return same_month and same_year
 
 
-def _format_category_lines(category_costs: CategoryCosts) -> list[str]:
+def format_category_lines(category_costs: CategoryCosts) -> list[str]:
     lines = ["Details (category: amount):"]
     for idx, (name, amount) in enumerate(category_costs.items(), 1):
         lines.append(f"{idx}. {name}: {amount:.2f} rubles")
@@ -267,19 +267,19 @@ def build_stats(stats: StatsResult, date: str) -> str:
         f"Expenses: {month_out:.2f} rubles",
         "",
     ]
-    lines.extend(_format_category_lines(cat_costs))
+    lines.extend(format_category_lines(cat_costs))
     lines.append("")
     return "\n".join(lines)
 
 
 def process_stats(command: list[str]) -> None:
     if len(command) == STATS_QUERY_LENGTH:
-        _execute_stats(command)
+        execute_stats(command)
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def _execute_stats(command: list[str]) -> None:
+def execute_stats(command: list[str]) -> None:
     date = extract_date(command[1])
     if date is None:
         print(INCORRECT_DATE_MSG)
@@ -287,7 +287,7 @@ def _execute_stats(command: list[str]) -> None:
         print(stats_handler(command[1]))
 
 
-def _update_month_stats(transaction: dict[str, Any], proc_date: DateTuple, report_date: DateTuple,
+def update_month_stats(transaction: dict[str, Any], proc_date: DateTuple, report_date: DateTuple,
                         category_costs: CategoryCosts) -> tuple[float, float]:
     if not is_within_month(proc_date, report_date):
         return float(0), float(0)
@@ -316,7 +316,7 @@ def stats_handler(report_date: str) -> str:
             total_amount -= transaction.get(KEY_AMOUNT, float(0))
         else:
             total_amount += transaction.get(KEY_AMOUNT, float(0))
-        inc_delta, cost_delta = _update_month_stats(
+        inc_delta, cost_delta = update_month_stats(
             transaction, proc_date, date, category_costs,
         )
         month_income += inc_delta
