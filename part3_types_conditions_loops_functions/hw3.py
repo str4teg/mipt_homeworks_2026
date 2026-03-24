@@ -192,7 +192,7 @@ def _execute_cost(command: list[str]) -> None:
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     category = extract_category(category_name)
     date = extract_date(income_date)
-    if category_name is None:
+    if category is None:
         return NOT_EXISTS_CATEGORY
     if amount <= 0:
         return NONPOSITIVE_VALUE_MSG
@@ -205,12 +205,12 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
 
 
 def cost_categories_handler() -> str:
-    result = ""
-    for common_category, value in EXPENSE_CATEGORIES.items():
-        for target_category in value:
-            result += f"{common_category}::{target_category}\n"
-    return result[:-1]
-
+    lines = [
+        f"{common_category}::{target_category}"
+        for common_category, subcategories in EXPENSE_CATEGORIES.items()
+        for target_category in subcategories
+    ]
+    return "\n".join(lines)
 
 def is_before(processing_date: str, report_date: str) -> bool:
     day, month, year = extract_valid_date(report_date)
