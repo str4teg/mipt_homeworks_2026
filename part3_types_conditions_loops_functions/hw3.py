@@ -120,6 +120,8 @@ def extract_amount(maybe_amount: str) -> float | None:
 
 def extract_category(raw: str) -> str | None:
     parts = raw.split("::")
+    if len(parts) != 2:
+        return None
     parent = parts[0]
     child = parts[1]
     if parent not in EXPENSE_CATEGORIES:
@@ -205,10 +207,9 @@ def cost_categories_handler() -> str:
     result = ""
     for common_category, value in EXPENSE_CATEGORIES.items():
         for target_category in value:
-            if common_category == "Other" and target_category == "SomeOtherCategory":
-                result += f"{common_category}::{target_category}"
-            else:
-                result += f"{common_category}::{target_category}\n"
+            result += f"{common_category}::{target_category}"
+            if common_category != "Other" and target_category != "SomeOtherCategory":
+                result += "\n"
     return result
 
 
