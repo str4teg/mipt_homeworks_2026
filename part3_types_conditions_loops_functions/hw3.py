@@ -252,7 +252,8 @@ def _execute_stats(command: list[str]) -> None:
         print(stats_handler(command[1]))
 
 
-def _update_month_stats(transaction: dict[str, Any], proc_date: str, report_date: str, category_costs: CategoryCosts) -> tuple[float, float]:
+def _update_month_stats(transaction: dict[str, Any], proc_date: str, report_date: str,
+                        category_costs: CategoryCosts) -> tuple[float, float]:
     if not is_within_month(proc_date, report_date):
         return float(0), float(0)
     amount = transaction.get(KEY_AMOUNT, float(0))
