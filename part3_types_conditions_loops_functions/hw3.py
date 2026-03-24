@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from typing import Any
 
 UNKNOWN_COMMAND_MSG = "Unknown command!"
 NONPOSITIVE_VALUE_MSG = "Value must be grater than zero!"
@@ -34,9 +35,7 @@ EXPENSE_CATEGORIES = {
     "Other": ("SomeCategory", "SomeOtherCategory"),
 }
 
-income_storage: dict[DateTuple, float] = {}
-cost_storage: dict[DateTuple, float] = {}
-category_storage: dict[DateTuple, CategoryCosts] = {}
+financial_transactions_storage: list[dict[str, Any]] = []
 
 
 def is_leap_year(year: int) -> bool:
@@ -145,9 +144,7 @@ def _execute_income(command: list[str]) -> None:
 
 
 def income_handler(amount: float, income_date: str) -> str:
-    date = extract_valid_date(income_date)
-    income_storage.setdefault(date, 0)
-    income_storage[date] += amount
+    financial_transactions_storage.append({"amount": amount, "date": income_date})
     return OP_SUCCESS_MSG
 
 
@@ -180,14 +177,7 @@ def _execute_cost(command: list[str]) -> None:
 
 
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
-    date = extract_valid_date(income_date)
-    cost_storage.setdefault(date, 0)
-    cost_storage[date] += amount
-
-    category_storage.setdefault(date, {})
-    date_cats = category_storage[date]
-    date_cats.setdefault(category_name, 0)
-    date_cats[category_name] += amount
+    financial_transactions_storage.append({"category": category_name, "amount": amount, "date": income_date})
     return OP_SUCCESS_MSG
 
 
@@ -195,9 +185,9 @@ def cost_categories_handler() -> str:
     return str(EXPENSE_CATEGORIES)
 
 
-def is_before(processing_date: DateTuple, date: DateTuple) -> bool:
-    day, month, year = date
-    proc_day, proc_month, proc_year = processing_date
+def is_before(processing_date: str, report_date: str) -> bool:
+    day, month, year = extract_date(report_date)
+    proc_day, proc_month, proc_year = extract_date(processing_date)
     if proc_year < year:
         return True
     if proc_year != year:
@@ -207,37 +197,10 @@ def is_before(processing_date: DateTuple, date: DateTuple) -> bool:
     return month == proc_month and proc_day <= day
 
 
-def is_within_month(processing_date: DateTuple, date: DateTuple) -> bool:
-    same_month = processing_date[1] == date[1]
-    same_year = processing_date[2] == date[2]
+def is_within_month(processing_date: str, date: str) -> bool:
+    same_month = extract_valid_date(processing_date)[1] == extract_valid_date(date)[1]
+    same_year = extract_valid_date(processing_date)[2] == extract_valid_date(date)[2]
     return same_month and same_year
-
-
-def _aggregate_categories(processing_date: DateTuple, category_costs: CategoryCosts) -> None:
-    date_cats = category_storage[processing_date]
-    for cat_name, cat_amount in date_cats.items():
-        category_costs.setdefault(cat_name, 0)
-        category_costs[cat_name] += cat_amount
-
-
-def calculate_stats(date: DateTuple) -> StatsResult:
-    total_amount = float(0)
-    month_income = float(0)
-    month_cost = float(0)
-    category_costs: CategoryCosts = {}
-
-    for proc_date, inc in income_storage.items():
-        if is_before(proc_date, date):
-            total_amount += inc
-            if is_within_month(proc_date, date):
-                month_income += inc
-
-    for proc_date, cost in cost_storage.items():
-        if is_within_month(proc_date, date):
-            month_cost += cost
-            _aggregate_categories(proc_date, category_costs)
-
-    return total_amount, month_income, month_cost, category_costs
 
 
 def _format_category_lines(category_costs: CategoryCosts) -> list[str]:
@@ -247,11 +210,11 @@ def _format_category_lines(category_costs: CategoryCosts) -> list[str]:
     return lines
 
 
-def build_stats(stats: StatsResult, date: DateTuple) -> str:
+def build_stats(stats: StatsResult, date: str) -> str:
     total, month_in, month_out, cat_costs = stats
     balance = month_in - month_out
     status = "loss" if balance < 0 else "profit"
-    day, month, year = date
+    day, month, year = extract_date(date)
 
     lines = [
         f"Your statistics as of {day:0>2}-{month:0>2}-{year:0>4}:",
@@ -282,24 +245,27 @@ def _execute_stats(command: list[str]) -> None:
 
 
 def stats_handler(report_date: str) -> str:
-    date = extract_valid_date(report_date)
     total_amount = float(0)
     month_income = float(0)
     month_cost = float(0)
     category_costs: CategoryCosts = {}
 
-    for proc_date, inc in income_storage.items():
-        if is_before(proc_date, date):
-            total_amount += inc
-            if is_within_month(proc_date, date):
-                month_income += inc
+    for transaction in financial_transactions_storage:
+        proc_date = transaction["date"]
+        if is_before(proc_date, report_date):
+            if "category" in transaction:
+                total_amount -= transaction["amount"]
+                if is_within_month(proc_date, report_date):
+                    month_cost += transaction["amount"]
+                    category_costs.setdefault(transaction["category"], 0)
+                    category_costs[transaction["category"]] += transaction["amount"]
+            else:
+                total_amount += transaction["amount"]
+                if is_within_month(proc_date, report_date):
+                    month_income += transaction["amount"]
 
-    for proc_date, cost in cost_storage.items():
-        if is_within_month(proc_date, date):
-            month_cost += cost
-            _aggregate_categories(proc_date, category_costs)
 
-    return build_stats((total_amount, month_income, month_cost, category_costs), date)
+    return build_stats((total_amount, month_income, month_cost, category_costs), report_date)
 
 
 def handle_command(line: str) -> None:
