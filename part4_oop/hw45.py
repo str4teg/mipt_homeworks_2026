@@ -62,6 +62,10 @@ class LRUPolicy(Policy[K]):
     capacity: int = 5
     _order: list[K] = field(default_factory=list, init=False)
 
+    def __init__(self, capacity: int = 5) -> None:
+        self._order = []
+        self.capacity = capacity
+
     def register_access(self, key: K) -> None:
         if key in self._order:
             self._order.remove(key)
