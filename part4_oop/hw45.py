@@ -42,7 +42,7 @@ class FIFOPolicy(Policy[K]):
 
     def get_key_to_evict(self) -> K | None:
         if len(self._order) > self.capacity:
-            return self._order.pop(0)
+            return self._order[0]
         return None
 
     def remove_key(self, key: K) -> None:
@@ -73,7 +73,7 @@ class LRUPolicy(Policy[K]):
 
     def get_key_to_evict(self) -> K | None:
         if len(self._order) > self.capacity:
-            return self._order.pop(0)
+            return self._order[0]
         return None
 
     def remove_key(self, key: K) -> None:
@@ -103,11 +103,11 @@ class LFUPolicy(Policy[K]):
 
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) > self.capacity:
-            return self._key_counter.pop(min(self._key_counter, key=self._key_counter.get))
+            return self._key_counter.get(min(self._key_counter, key=self._key_counter.get))
         return None
 
     def remove_key(self, key: K) -> None:
-        self._key_counter.pop(key)
+        self._key_counter.pop(key, None)
 
     def clear(self) -> None:
         self._key_counter.clear()
@@ -129,7 +129,10 @@ class MIPTCache(Cache[K, V]):
             self.storage.remove(_key_to_evict)
 
     def get(self, key: K) -> V | None:
-        self.policy.register_access(key)
+        if self.storage.exists(key):
+            self.policy.register_access(key)
+            return self.storage.get(key)
+        return None
 
     def exists(self, key: K) -> bool:
         if self.storage.exists(key):
