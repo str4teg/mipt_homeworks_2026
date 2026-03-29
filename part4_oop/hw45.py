@@ -93,21 +93,28 @@ class LFUPolicy(Policy[K]):
     capacity: int = 5
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
 
+    def __init__(self, capacity: int = 5) -> None:
+        self._key_counter = {}
+        self.capacity = capacity
+
     def register_access(self, key: K) -> None:
-        raise NotImplementedError
+        self._key_counter.setdefault(key, 0)
+        self._key_counter[key] += 1
 
     def get_key_to_evict(self) -> K | None:
-        raise NotImplementedError
+        if len(self._key_counter) > self.capacity:
+            return self._key_counter.pop(min(self._key_counter, key=self._key_counter.get))
+        return None
 
     def remove_key(self, key: K) -> None:
-        raise NotImplementedError
+        self._key_counter.pop(key)
 
     def clear(self) -> None:
-        raise NotImplementedError
+        self._key_counter.clear()
 
     @property
     def has_keys(self) -> bool:
-        raise NotImplementedError
+        return bool(self._key_counter)
 
 
 class MIPTCache(Cache[K, V]):
