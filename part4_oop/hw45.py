@@ -32,21 +32,29 @@ class FIFOPolicy(Policy[K]):
     capacity: int = 5
     _order: list[K] = field(default_factory=list, init=False)
 
+    def __init__(self, capacity: int = 5) -> None:
+        self._order = []
+        self.capacity = capacity
+
     def register_access(self, key: K) -> None:
-        raise NotImplementedError
+        if key not in self._order:
+            self._order.append(key)
 
     def get_key_to_evict(self) -> K | None:
-        raise NotImplementedError
+        if len(self._order) > self.capacity:
+            return self._order.pop(0)
+        return None
 
     def remove_key(self, key: K) -> None:
-        raise NotImplementedError
+        if key in self._order:
+            self._order.remove(key)
 
     def clear(self) -> None:
-        raise NotImplementedError
+        self._order.clear()
 
     @property
     def has_keys(self) -> bool:
-        raise NotImplementedError
+        return bool(self._order)
 
 
 @dataclass
