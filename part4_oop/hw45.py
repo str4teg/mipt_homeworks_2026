@@ -106,13 +106,13 @@ class LFUPolicy(Policy[K]):
         self._last_key = key
 
     def _find_key_to_evict(self) -> K | None:
-        _key_to_evict: K | None = None
-        for _key in self._key_counter:
-            if _key != self._last_key and (
-                (_key_to_evict is None) or (self._key_counter[_key_to_evict] > self._key_counter[_key])
+        key_to_evict: K | None = None
+        for key in self._key_counter:
+            if key != self._last_key and (
+                (key_to_evict is None) or (self._key_counter[key_to_evict] > self._key_counter[key])
             ):
-                _key_to_evict = _key
-        return _key_to_evict
+                key_to_evict = key
+        return key_to_evict
 
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) >= self.capacity:
@@ -138,10 +138,10 @@ class MIPTCache(Cache[K, V]):
     def set(self, key: K, value: V) -> None:
         self.storage.set(key, value)
         self.policy.register_access(key)
-        _key_to_evict = self.policy.get_key_to_evict()
-        if _key_to_evict is not None:
-            self.storage.remove(_key_to_evict)
-            self.policy.remove_key(_key_to_evict)
+        key_to_evict = self.policy.get_key_to_evict()
+        if key_to_evict is not None:
+            self.storage.remove(key_to_evict)
+            self.policy.remove_key(key_to_evict)
 
     def get(self, key: K) -> V | None:
         if self.storage.exists(key):
@@ -172,6 +172,6 @@ class CachedProperty[V]:
         if instance.cache.exists(self.func.__name__):
             return instance.cache.get(self.func.__name__)  # type: ignore[return-value]
 
-        _res = self.func(instance)
-        instance.cache.set(self.func.__name__, _res)
-        return _res
+        res = self.func(instance)
+        instance.cache.set(self.func.__name__, res)
+        return res
