@@ -105,15 +105,6 @@ class LFUPolicy(Policy[K]):
         self._key_counter[key] += 1
         self._last_key = key
 
-    def _find_key_to_evict(self) -> K | None:
-        key_to_evict: K | None = None
-        for key in self._key_counter:
-            if key != self._last_key and (
-                (key_to_evict is None) or (self._key_counter[key_to_evict] > self._key_counter[key])
-            ):
-                key_to_evict = key
-        return key_to_evict
-
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) >= self.capacity:
             return self._find_key_to_evict()
@@ -128,6 +119,15 @@ class LFUPolicy(Policy[K]):
     @property
     def has_keys(self) -> bool:
         return bool(self._key_counter)
+
+    def _find_key_to_evict(self) -> K | None:
+        key_to_evict = None
+        for key in self._key_counter:
+            if key != self._last_key and (
+                (key_to_evict is None) or (self._key_counter[key_to_evict] > self._key_counter[key])
+            ):
+                key_to_evict = key
+        return key_to_evict
 
 
 class MIPTCache(Cache[K, V]):
