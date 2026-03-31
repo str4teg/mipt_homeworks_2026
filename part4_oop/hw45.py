@@ -108,9 +108,9 @@ class LFUPolicy(Policy[K]):
     def _find_key_to_evict(self) -> K | None:
         _key_to_evict: K | None = None
         for _key in self._key_counter:
-            if _key != self._last_key:
-                if (_key_to_evict is None) or (self._key_counter[_key_to_evict]
-                                               > self._key_counter[_key]):
+            if (_key != self._last_key and
+                    ((_key_to_evict is None)
+                     or (self._key_counter[_key_to_evict] > self._key_counter[_key]))):
                     _key_to_evict = _key
         return _key_to_evict
 
