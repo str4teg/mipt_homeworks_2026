@@ -27,6 +27,7 @@ class DictStorage(Storage[K, V]):
     def clear(self) -> None:
         self._data.clear()
 
+
 @dataclass
 class FIFOPolicy(Policy[K]):
     capacity: int = 5
@@ -163,10 +164,10 @@ class CachedProperty[V]:
 
     def __get__(self, instance: HasCache[Any, Any] | None, owner: type) -> V:
         if instance is None:
-            return self # type: ignore[return-value]
+            return self  # type: ignore[return-value]
 
         if instance.cache.exists(self.func.__name__):
-            return instance.cache.get(self.func.__name__) # type: ignore[return-value]
+            return instance.cache.get(self.func.__name__)  # type: ignore[return-value]
 
         _res = self.func(instance)
         instance.cache.set(self.func.__name__, _res)
