@@ -259,32 +259,12 @@ def build_stats(stats: StatsResult, date: str) -> str:
 
 def process_stats(command: list[str]) -> None:
     if len(command) == STATS_QUERY_LENGTH:
-        execute_stats(command)
+        print(stats_handler(command[1]))
     else:
         print(UNKNOWN_COMMAND_MSG)
 
 
-def execute_stats(command: list[str]) -> None:
-    print(stats_handler(command[1]))
-
-
-def update_month_stats(
-    transaction: dict[str, Any], proc_date: DateTuple, report_date: DateTuple, category_costs: CategoryCosts
-) -> tuple[float, float]:
-    if not is_within_month(proc_date, report_date):
-        return float(0), float(0)
-    amount = transaction.get(KEY_AMOUNT, float(0))
-    if KEY_CATEGORY in transaction:
-        cat_name = transaction.get(KEY_CATEGORY, "")
-        category_costs[cat_name] = category_costs.get(cat_name, float(0)) + amount
-        return float(0), amount
-    return amount, float(0)
-
-
-def stats_handler(report_date: str) -> str:
-    date = extract_date(report_date)
-    if date is None:
-        return INCORRECT_DATE_MSG
+def execute_stats(date: DateTuple) -> StatsResult:
     total_amount: float = 0
     month_income: float = 0
     month_cost: float = 0
@@ -307,7 +287,27 @@ def stats_handler(report_date: str) -> str:
         month_income += inc_delta
         month_cost += cost_delta
 
-    return build_stats((total_amount, month_income, month_cost, category_costs), report_date)
+    return total_amount, month_income, month_cost, category_costs
+
+
+def update_month_stats(
+    transaction: dict[str, Any], proc_date: DateTuple, report_date: DateTuple, category_costs: CategoryCosts
+) -> tuple[float, float]:
+    if not is_within_month(proc_date, report_date):
+        return float(0), float(0)
+    amount = transaction.get(KEY_AMOUNT, float(0))
+    if KEY_CATEGORY in transaction:
+        cat_name = transaction.get(KEY_CATEGORY, "")
+        category_costs[cat_name] = category_costs.get(cat_name, float(0)) + amount
+        return float(0), amount
+    return amount, float(0)
+
+
+def stats_handler(report_date: str) -> str:
+    date = extract_date(report_date)
+    if date is None:
+        return INCORRECT_DATE_MSG
+    return build_stats(execute_stats(date), report_date)
 
 
 def handle_command(line: str) -> None:
