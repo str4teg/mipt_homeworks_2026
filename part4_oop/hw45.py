@@ -101,9 +101,10 @@ class LFUPolicy(Policy[K]):
         self._last_key = None
 
     def register_access(self, key: K) -> None:
+        if key not in self._key_counter:
+            self._last_key = key
         self._key_counter.setdefault(key, 0)
         self._key_counter[key] += 1
-        self._last_key = key
 
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) > self.capacity:
