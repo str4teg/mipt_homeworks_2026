@@ -229,13 +229,8 @@ def is_within_month(processing_date: DateTuple, date: DateTuple) -> bool:
     return same_month and same_year
 
 
-def formatted_line(idx: int, name: str, amount: float) -> str:
-    return f"{idx}. {name}: {amount:.2f} rubles"
-
-
 def format_category_lines(category_costs: CategoryCosts) -> list[str]:
-    lines = ["Details (category: amount):"]
-    lines.extend([formatted_line(idx, name, amount) for idx, (name, amount) in enumerate(category_costs.items(), 1)])
+    lines = [f"{idx}. {name}: {amount:.2f} rubles" for idx, (name, amount) in enumerate(category_costs.items(), 1)]
     return lines
 
 
@@ -252,6 +247,7 @@ def build_stats(stats: StatsResult, date: str) -> str:
         f"Income: {month_in:.2f} rubles",
         f"Expenses: {month_out:.2f} rubles",
         "",
+        "Details (category: amount):",
     ]
     lines.extend(format_category_lines(cat_costs))
     lines.append("")
