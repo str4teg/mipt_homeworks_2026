@@ -278,14 +278,14 @@ def execute_stats(date: DateTuple) -> StatsResult:
             total_amount -= transaction.get(KEY_AMOUNT, float(0))
         else:
             total_amount += transaction.get(KEY_AMOUNT, float(0))
-        inc_delta, cost_delta = update_month_stats(
-            transaction,
-            proc_date,
-            date,
-            category_costs,
-        )
-        month_income += inc_delta
-        month_cost += cost_delta
+        if is_within_month(proc_date, date):
+            amount = transaction.get(KEY_AMOUNT, float(0))
+            if KEY_CATEGORY in transaction:
+                cat_name = transaction.get(KEY_CATEGORY, "")
+                category_costs[cat_name] = category_costs.get(cat_name, float(0)) + amount
+                month_cost += amount
+            else:
+                month_income += amount
 
     return total_amount, month_income, month_cost, category_costs
 
