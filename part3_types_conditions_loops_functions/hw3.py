@@ -235,9 +235,7 @@ def formatted_line(idx: int, name: str, amount: float) -> str:
 
 def format_category_lines(category_costs: CategoryCosts) -> list[str]:
     lines = ["Details (category: amount):"]
-    lines.extend(
-        [formatted_line(idx, name, amount) for idx, (name, amount) in enumerate(category_costs.items(), 1)]
-    )
+    lines.extend([formatted_line(idx, name, amount) for idx, (name, amount) in enumerate(category_costs.items(), 1)])
     return lines
 
 
