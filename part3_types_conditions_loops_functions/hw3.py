@@ -154,7 +154,8 @@ def execute_income(command: list[str]) -> None:
     amount = extract_amount(command[1])
     if amount is None:
         print(NONPOSITIVE_VALUE_MSG)
-    print(income_handler(amount, command[2]))
+    else:
+        print(income_handler(amount, command[2]))
 
 
 def income_handler(amount: float, income_date: str) -> str:
@@ -289,7 +290,7 @@ def stats_handler(report_date: str) -> str:
     category_costs: CategoryCosts = {}
 
     for transaction in financial_transactions_storage:
-        proc_date = transaction.get(KEY_DATE, tuple())
+        proc_date = transaction.get(KEY_DATE, ())
         if not is_before(proc_date, date):
             continue
         if KEY_CATEGORY in transaction:
