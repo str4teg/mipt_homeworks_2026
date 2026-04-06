@@ -230,8 +230,7 @@ def is_within_month(processing_date: DateTuple, date: DateTuple) -> bool:
 
 
 def format_category_lines(category_costs: CategoryCosts) -> list[str]:
-    lines = [f"{idx}. {name}: {amount:.2f} rubles" for idx, (name, amount) in enumerate(category_costs.items(), 1)]
-    return lines
+    return [f"{idx}. {name}: {amount:.2f} rubles" for idx, (name, amount) in enumerate(category_costs.items(), 1)]
 
 
 def build_stats(stats: StatsResult, date: str) -> str:
