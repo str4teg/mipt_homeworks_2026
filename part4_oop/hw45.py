@@ -33,10 +33,6 @@ class FIFOPolicy(Policy[K]):
     capacity: int = 5
     _order: list[K] = field(default_factory=list, init=False)
 
-    def __init__(self, capacity: int = 5) -> None:
-        self._order = []
-        self.capacity = capacity
-
     def register_access(self, key: K) -> None:
         if key not in self._order:
             self._order.append(key)
@@ -95,11 +91,6 @@ class LFUPolicy(Policy[K]):
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
     _last_key: K | None = None
 
-    def __init__(self, capacity: int = 5) -> None:
-        self._key_counter = {}
-        self.capacity = capacity
-        self._last_key = None
-
     def register_access(self, key: K) -> None:
         if key not in self._key_counter:
             self._last_key = key
@@ -151,7 +142,10 @@ class MIPTCache(Cache[K, V]):
         return None
 
     def exists(self, key: K) -> bool:
-        return self.storage.exists(key)
+        if not self.storage.exists(key):
+            return False
+        self.policy.register_access(key)
+        return True
 
     def remove(self, key: K) -> None:
         self.policy.remove_key(key)
