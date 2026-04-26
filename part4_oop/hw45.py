@@ -160,7 +160,7 @@ class CachedProperty[V]:
     def __init__(self, func: Callable[..., V]) -> None:
         self.func = func
 
-    def __set_name__(self, owner, name) -> None:
+    def __set_name__(self, owner: type, name: str) -> None:
         self.name = name
 
     def __get__(self, instance: HasCache[Any, Any] | None, owner: type) -> V:
